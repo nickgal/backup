@@ -18,7 +18,7 @@ module Backup
 
       'excon' => {
         :require => 'excon',
-        :version => '~> 0.17.0',
+        :version => '~> 0.20.0',
         :for     => 'HTTP Connection Support for Storages/Syncers'
       },
 

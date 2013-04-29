@@ -49,20 +49,21 @@ module Backup
     # Use `#success?` to determine if all commands in the pipeline succeeded.
     # If `#success?` returns `false`, use `#error_messages` to get an error report.
     def run
-      Open4.popen4(pipeline) do |pid, stdin, stdout, stderr|
-        pipestatus = stdout.read.gsub("\n", '').split(':').sort
-        pipestatus.each do |status|
-          index, exitstatus = status.split('|').map(&:to_i)
-          unless @success_codes[index].include?(exitstatus)
-            command = command_name(@commands[index])
-            @errors << SystemCallError.new(
-              "'#{ command }' returned exit code: #{ exitstatus }", exitstatus
-            )
-          end
-        end
-        @stderr = stderr.read.strip
-      end
-      Logger.warn(stderr_messages) if success? && stderr_messages
+      %x[#{pipeline}]
+      # Open4.popen4(pipeline) do |pid, stdin, stdout, stderr|
+      #   pipestatus = stdout.read.gsub("\n", '').split(':').sort
+      #   pipestatus.each do |status|
+      #     index, exitstatus = status.split('|').map(&:to_i)
+      #     unless @success_codes[index].include?(exitstatus)
+      #       command = command_name(@commands[index])
+      #       @errors << SystemCallError.new(
+      #         "'#{ command }' returned exit code: #{ exitstatus }", exitstatus
+      #       )
+      #     end
+      #   end
+      #   @stderr = stderr.read.strip
+      # end
+      # Logger.warn(stderr_messages) if success? && stderr_messages
     rescue Exception => e
       raise Errors::Pipeline::ExecutionError.wrap(e)
     end

@@ -171,50 +171,50 @@ module Backup
       def run(command)
         name = command_name(command)
         Logger.info "Running system utility '#{ name }'..."
+        return %x[#{command}]
+        # begin
+        #   out, err = '', ''
+        #   # popen4 doesn't work in 1.8.7 with stock versions of ruby shipped
+        #   # with major OSs. Hack to make it stop segfaulting.
+        #   # See: https://github.com/engineyard/engineyard/issues/115
+        #   GC.disable if RUBY_VERSION < '1.9'
+        #   ps = Open4.popen4(command) do |pid, stdin, stdout, stderr|
+        #     stdin.close
+        #     out, err = stdout.read.strip, stderr.read.strip
+        #   end
+        # rescue Exception => e
+        #   raise Errors::Utilities::SystemCallError.wrap(e, <<-EOS)
+        #     Failed to execute system command on #{ RUBY_PLATFORM }
+        #     Command was: #{ command }
+        #   EOS
+        # ensure
+        #   GC.enable if RUBY_VERSION < '1.9'
+        # end
 
-        begin
-          out, err = '', ''
-          # popen4 doesn't work in 1.8.7 with stock versions of ruby shipped
-          # with major OSs. Hack to make it stop segfaulting.
-          # See: https://github.com/engineyard/engineyard/issues/115
-          GC.disable if RUBY_VERSION < '1.9'
-          ps = Open4.popen4(command) do |pid, stdin, stdout, stderr|
-            stdin.close
-            out, err = stdout.read.strip, stderr.read.strip
-          end
-        rescue Exception => e
-          raise Errors::Utilities::SystemCallError.wrap(e, <<-EOS)
-            Failed to execute system command on #{ RUBY_PLATFORM }
-            Command was: #{ command }
-          EOS
-        ensure
-          GC.enable if RUBY_VERSION < '1.9'
-        end
+        # if ps.success?
+        #   unless out.empty?
+        #     Logger.info(
+        #       out.lines.map {|line| "#{ name }:STDOUT: #{ line }" }.join
+        #     )
+        #   end
 
-        if ps.success?
-          unless out.empty?
-            Logger.info(
-              out.lines.map {|line| "#{ name }:STDOUT: #{ line }" }.join
-            )
-          end
+        #   unless err.empty?
+        #     Logger.warn(
+        #       err.lines.map {|line| "#{ name }:STDERR: #{ line }" }.join
+        #     )
+        #   end
 
-          unless err.empty?
-            Logger.warn(
-              err.lines.map {|line| "#{ name }:STDERR: #{ line }" }.join
-            )
-          end
-
-          return out
-        else
-          raise Errors::Utilities::SystemCallError, <<-EOS
-            '#{ name }' Failed on #{ RUBY_PLATFORM }
-            The following information should help to determine the problem:
-            Command was: #{ command }
-            Exit Status: #{ ps.exitstatus }
-            STDOUT Messages: #{ out.empty? ? 'None' : "\n#{ out }" }
-            STDERR Messages: #{ err.empty? ? 'None' : "\n#{ err }" }
-          EOS
-        end
+        #   return out
+        # else
+        #   raise Errors::Utilities::SystemCallError, <<-EOS
+        #     '#{ name }' Failed on #{ RUBY_PLATFORM }
+        #     The following information should help to determine the problem:
+        #     Command was: #{ command }
+        #     Exit Status: #{ ps.exitstatus }
+        #     STDOUT Messages: #{ out.empty? ? 'None' : "\n#{ out }" }
+        #     STDERR Messages: #{ err.empty? ? 'None' : "\n#{ err }" }
+        #   EOS
+        # end
       end
 
       def reset!
